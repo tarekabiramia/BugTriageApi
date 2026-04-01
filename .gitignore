@@ -1,0 +1,7 @@
+bin/
+obj/
+.vs/
+*.user
+.env
+*.DotSettings.user
+appsettings.Development.json

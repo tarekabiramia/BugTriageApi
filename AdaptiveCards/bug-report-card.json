@@ -1,0 +1,103 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.4",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "Bug Report",
+      "weight": "Bolder",
+      "size": "Large",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Fill out the details below to submit a bug report.",
+      "wrap": true,
+      "spacing": "None"
+    },
+    {
+      "type": "Input.Text",
+      "id": "title",
+      "label": "Title",
+      "placeholder": "Brief description of the bug",
+      "isRequired": true,
+      "errorMessage": "Title is required"
+    },
+    {
+      "type": "Input.ChoiceSet",
+      "id": "area",
+      "label": "Area",
+      "isRequired": true,
+      "errorMessage": "Area is required",
+      "choices": [
+        { "title": "Frontend", "value": "Frontend" },
+        { "title": "Backend", "value": "Backend" },
+        { "title": "Both", "value": "Both" }
+      ],
+      "placeholder": "Select area"
+    },
+    {
+      "type": "Input.Text",
+      "id": "pageOrFeature",
+      "label": "Page / Feature",
+      "placeholder": "e.g. Homepage header, Contact form",
+      "isRequired": true,
+      "errorMessage": "Page or Feature is required"
+    },
+    {
+      "type": "Input.Text",
+      "id": "stepsToReproduce",
+      "label": "Steps to Reproduce",
+      "placeholder": "1. Go to...\n2. Click on...\n3. See error",
+      "isRequired": true,
+      "isMultiline": true,
+      "errorMessage": "Steps to reproduce are required"
+    },
+    {
+      "type": "Input.Text",
+      "id": "expected",
+      "label": "Expected Behavior",
+      "placeholder": "What should have happened?",
+      "isRequired": true,
+      "isMultiline": true,
+      "errorMessage": "Expected behavior is required"
+    },
+    {
+      "type": "Input.Text",
+      "id": "actual",
+      "label": "Actual Behavior",
+      "placeholder": "What actually happened?",
+      "isRequired": true,
+      "isMultiline": true,
+      "errorMessage": "Actual behavior is required"
+    },
+    {
+      "type": "Input.ChoiceSet",
+      "id": "severity",
+      "label": "Severity",
+      "isRequired": true,
+      "errorMessage": "Severity is required",
+      "choices": [
+        { "title": "\ud83d\udd34 Blocker", "value": "Blocker" },
+        { "title": "\ud83d\udfe0 High", "value": "High" },
+        { "title": "\ud83d\udfe1 Medium", "value": "Medium" },
+        { "title": "\ud83d\udfe2 Low", "value": "Low" }
+      ],
+      "placeholder": "Select severity"
+    },
+    {
+      "type": "Input.Text",
+      "id": "screenshot",
+      "label": "Screenshot URL (optional)",
+      "placeholder": "https://..."
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "\ud83d\ude80 Submit Bug Report",
+      "style": "positive"
+    }
+  ]
+}
