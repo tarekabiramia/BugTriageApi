@@ -24,6 +24,19 @@ public class TriageResult
 
     [JsonPropertyName("summary")]
     public string Summary { get; set; } = string.Empty;
+
+    // Pre-formatted fields for Power Automate (flat strings, no parsing needed)
+    [JsonPropertyName("plannerDescription")]
+    public string PlannerDescription { get; set; } = string.Empty;
+
+    [JsonPropertyName("teamsMessage")]
+    public string TeamsMessage { get; set; } = string.Empty;
+
+    [JsonPropertyName("affectedFilesText")]
+    public string AffectedFilesText { get; set; } = string.Empty;
+
+    [JsonPropertyName("complexityLabel")]
+    public string ComplexityLabel { get; set; } = string.Empty;
 }
 
 public class AffectedFile

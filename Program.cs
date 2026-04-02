@@ -37,10 +37,26 @@ app.MapGet("/api/health", () => Results.Ok(new
 }));
 
 // Bug triage endpoint
-app.MapPost("/api/triage", async (BugReportRequest bug, TriageService triageService) =>
+app.MapPost("/api/triage", async (BugReportRequest bug, TriageService triageService, ILogger<Program> logger) =>
 {
-    var result = await triageService.TriageAsync(bug);
-    return Results.Ok(result);
+    if (string.IsNullOrWhiteSpace(bug.Title))
+        return Results.BadRequest(new { error = "Title is required" });
+
+    try
+    {
+        var result = await triageService.TriageAsync(bug);
+        return Results.Ok(result);
+    }
+    catch (HttpRequestException ex)
+    {
+        logger.LogError(ex, "External API call failed during triage");
+        return Results.Json(new { error = "Failed to contact external service", detail = ex.Message }, statusCode: 502);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Triage failed for bug: {Title}", bug.Title);
+        return Results.Json(new { error = "Triage failed", detail = ex.Message }, statusCode: 500);
+    }
 });
 
 // Bind to Railway's PORT env var

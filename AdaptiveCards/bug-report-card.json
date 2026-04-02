@@ -1,7 +1,7 @@
 {
   "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
   "type": "AdaptiveCard",
-  "version": "1.4",
+  "version": "1.3",
   "body": [
     {
       "type": "TextBlock",
@@ -30,12 +30,12 @@
       "label": "Area",
       "isRequired": true,
       "errorMessage": "Area is required",
+      "style": "compact",
       "choices": [
         { "title": "Frontend", "value": "Frontend" },
         { "title": "Backend", "value": "Backend" },
         { "title": "Both", "value": "Both" }
-      ],
-      "placeholder": "Select area"
+      ]
     },
     {
       "type": "Input.Text",
@@ -49,7 +49,7 @@
       "type": "Input.Text",
       "id": "stepsToReproduce",
       "label": "Steps to Reproduce",
-      "placeholder": "1. Go to...\n2. Click on...\n3. See error",
+      "placeholder": "1. Go to... 2. Click on... 3. See error",
       "isRequired": true,
       "isMultiline": true,
       "errorMessage": "Steps to reproduce are required"
@@ -78,25 +78,25 @@
       "label": "Severity",
       "isRequired": true,
       "errorMessage": "Severity is required",
+      "style": "compact",
       "choices": [
-        { "title": "\ud83d\udd34 Blocker", "value": "Blocker" },
-        { "title": "\ud83d\udfe0 High", "value": "High" },
-        { "title": "\ud83d\udfe1 Medium", "value": "Medium" },
-        { "title": "\ud83d\udfe2 Low", "value": "Low" }
-      ],
-      "placeholder": "Select severity"
+        { "title": "Blocker", "value": "Blocker" },
+        { "title": "High", "value": "High" },
+        { "title": "Medium", "value": "Medium" },
+        { "title": "Low", "value": "Low" }
+      ]
     },
     {
       "type": "Input.Text",
       "id": "screenshot",
       "label": "Screenshot URL (optional)",
-      "placeholder": "https://..."
+      "placeholder": "Paste a link to a screenshot if available"
     }
   ],
   "actions": [
     {
       "type": "Action.Submit",
-      "title": "\ud83d\ude80 Submit Bug Report",
+      "title": "Submit Bug Report",
       "style": "positive"
     }
   ]
