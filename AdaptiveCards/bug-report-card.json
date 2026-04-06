@@ -90,7 +90,7 @@
       "type": "Input.Text",
       "id": "screenshot",
       "label": "Screenshot URL (optional)",
-      "placeholder": "Paste a link to a screenshot if available"
+      "placeholder": "Upload to SharePoint/OneDrive and paste the link here"
     }
   ],
   "actions": [
