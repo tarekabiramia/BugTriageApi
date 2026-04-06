@@ -19,7 +19,7 @@ public class ClaudeService
         var fileTreeText = string.Join("\n", fileTree.Select(f => $"  {f}"));
 
         var systemPrompt = $$"""
-            You are a senior full-stack developer triaging bugs for a .NET Core 8 + Vue 3 construction/maintenance company website.
+            You are a senior full-stack developer triaging bugs for a .NET Core 8 + Vue 3.
 
             Here is the repository file tree:
             <file_tree>
@@ -81,7 +81,7 @@ public class ClaudeService
             $"--- FILE: {f.Key} ---\n{f.Value.Content}\n--- END FILE ---"));
 
         var systemPrompt = $$"""
-            You are a senior developer fixing a bug in a .NET Core 8 + Vue 3 construction company website.
+            You are a senior developer fixing a bug in a .NET Core 8 + Vue 3.
 
             Bug Report:
             Title: {{bug.Title}}
