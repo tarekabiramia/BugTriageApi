@@ -64,8 +64,6 @@ public class TriageService
         result.AffectedFilesText = string.Join("\n",
             result.AffectedFiles.Select(f => $"- {f.Path}: {f.Reason}"));
 
-        var prLine = result.PrUrl != null ? $"\nPR: {result.PrUrl}" : "";
-
         result.PlannerDescription = $"""
             --- BUG REPORT ---
             Title: {bug.Title}
@@ -88,18 +86,25 @@ public class TriageService
             Suggested Fix: {result.SuggestedFix ?? "N/A (complexity too high)"}
 
             Affected Files:
-            {result.AffectedFilesText}{prLine}
+            {result.AffectedFilesText}
             """;
 
-        result.TeamsMessage = $"""
-            Bug Triaged!
+        var statusMessage = result.Action switch
+            {
+                "auto-fix" => "Our AI agents have analyzed the issue, generated a fix, and submitted it for review. The R&D team will verify and deploy shortly.",
+                "review-needed" => "Our AI agents have analyzed the issue and prepared a detailed report. A developer will pick this up shortly.",
+                _ => "This issue requires hands-on investigation. It has been assigned to the R&D team."
+            };
 
-            Title: {bug.Title}
-            Complexity: {result.ComplexityLabel}
-            Action: {result.Action}
-            Root Cause: {result.RootCauseHypothesis}
-            Summary: {result.Summary}
-            Suggested Fix: {result.SuggestedFix ?? "N/A"}{prLine}
+        result.TeamsMessage = $"""
+            <b>Bug Report Received</b>
+            <br><br>
+            <b>Title:</b> {bug.Title}<br>
+            <b>Severity:</b> {bug.Severity}<br>
+            <br>
+            {statusMessage}
+            <br><br>
+            <i>A task has been created and your team has been notified. We'll keep you posted.</i>
             """;
 
         return result;
