@@ -25,6 +25,7 @@ builder.Services.AddHttpClient<ClaudeService>((sp, client) =>
     client.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
 });
 
+builder.Services.AddScoped<AutoFixService>();
 builder.Services.AddScoped<TriageService>();
 
 var app = builder.Build();
