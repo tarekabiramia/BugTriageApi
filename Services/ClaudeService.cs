@@ -67,13 +67,110 @@ public class ClaudeService
             }
             """;
 
+        var responseText = await SendClaudeRequestAsync(systemPrompt, userPrompt);
+        return JsonSerializer.Deserialize<TriageResult>(responseText)
+            ?? throw new InvalidOperationException("Failed to deserialize triage result from Claude response");
+    }
+
+    public async Task<List<FixResult>> GenerateFixAsync(
+        BugReportRequest bug,
+        TriageResult triage,
+        Dictionary<string, (string Content, string Sha)> fileContents)
+    {
+        var filesSection = string.Join("\n\n", fileContents.Select(f =>
+            $"--- FILE: {f.Key} ---\n{f.Value.Content}\n--- END FILE ---"));
+
+        var systemPrompt = $$"""
+            You are a senior developer fixing a bug in a .NET Core 8 + Vue 3 construction company website.
+
+            Bug Report:
+            Title: {{bug.Title}}
+            Area: {{bug.Area}}
+            Root Cause: {{triage.RootCauseHypothesis}}
+            Suggested Fix: {{triage.SuggestedFix ?? "None"}}
+
+            Here are the affected files:
+            {{filesSection}}
+
+            Rules:
+            - Return the COMPLETE fixed file content for each file — not a diff, not a snippet
+            - Only fix what is broken — do NOT refactor, rename, or reorganize anything else
+            - Rate your confidence 1-10 for each fix (10 = certain, 1 = guessing)
+            - If you are not confident about a file, still include it but rate it low
+            - Respond with JSON only — no markdown, no explanation
+            """;
+
+        var userPrompt = """
+            Generate the fixes. Respond ONLY with a JSON object (no markdown fences):
+            {
+              "fixes": [
+                {
+                  "filePath": "<exact file path>",
+                  "fixedContent": "<complete fixed file content>",
+                  "confidence": <1-10>,
+                  "changeDescription": "<what you changed and why>"
+                }
+              ]
+            }
+            """;
+
+        var responseText = await SendClaudeRequestAsync(systemPrompt, userPrompt);
+        var fixResponse = JsonSerializer.Deserialize<ClaudeFixResponse>(responseText)
+            ?? throw new InvalidOperationException("Failed to deserialize fix response");
+
+        return fixResponse.Fixes.Select(f => new FixResult
+        {
+            FilePath = f.FilePath,
+            OriginalContent = fileContents.TryGetValue(f.FilePath, out var meta) ? meta.Content : "",
+            FixedContent = f.FixedContent,
+            Confidence = f.Confidence,
+            ChangeDescription = f.ChangeDescription
+        }).ToList();
+    }
+
+    public async Task<ClaudeReviewResponse> ReviewFixAsync(string filePath, string originalContent, string fixedContent, string bugContext)
+    {
+        var systemPrompt = $$"""
+            You are a strict senior code reviewer. Review this bug fix for:
+            1. Correctness — does it actually fix the reported bug?
+            2. Side effects — does it break anything else?
+            3. Security — does it introduce any vulnerabilities?
+            4. Completeness — is the fix sufficient or partial?
+
+            Bug context: {{bugContext}}
+
+            Be strict. If anything is wrong, do NOT approve.
+            Respond with JSON only — no markdown, no explanation.
+            """;
+
+        var userPrompt = $$"""
+            File: {{filePath}}
+
+            ORIGINAL:
+            {{originalContent}}
+
+            FIXED:
+            {{fixedContent}}
+
+            Respond ONLY with a JSON object (no markdown fences):
+            {
+              "approved": <true or false>,
+              "issues": ["<issue 1>", "<issue 2>"],
+              "notes": "<overall review notes>"
+            }
+            """;
+
+        var responseText = await SendClaudeRequestAsync(systemPrompt, userPrompt);
+        return JsonSerializer.Deserialize<ClaudeReviewResponse>(responseText)
+            ?? throw new InvalidOperationException("Failed to deserialize review response");
+    }
+
+    private async Task<string> SendClaudeRequestAsync(string systemPrompt, string userPrompt)
+    {
         var request = new ClaudeRequest
         {
             System = systemPrompt,
-            Messages =
-            [
-                new ClaudeMessage { Role = "user", Content = userPrompt }
-            ]
+            Messages = [new ClaudeMessage { Role = "user", Content = userPrompt }]
         };
 
         var jsonContent = JsonSerializer.Serialize(request);
@@ -91,12 +188,8 @@ public class ClaudeService
         var text = claudeResponse.Content.FirstOrDefault()?.Text
             ?? throw new InvalidOperationException("No text content in Claude response");
 
-        // Strip accidental markdown fences
         text = Regex.Replace(text, @"^```(?:json)?\s*\n?", "", RegexOptions.Multiline);
         text = Regex.Replace(text, @"\n?```\s*$", "", RegexOptions.Multiline);
-        text = text.Trim();
-
-        return JsonSerializer.Deserialize<TriageResult>(text)
-            ?? throw new InvalidOperationException("Failed to deserialize triage result from Claude response");
+        return text.Trim();
     }
 }
