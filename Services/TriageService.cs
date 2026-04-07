@@ -89,6 +89,7 @@ public class TriageService
             Actual: {bug.Actual}
 
             --- AI TRIAGE RESULTS ---
+            Category: {result.Category}
             Complexity: {result.ComplexityLabel}
             Action: {result.Action}
             Root Cause: {result.RootCauseHypothesis}
@@ -117,6 +118,9 @@ public class TriageService
             <br><br>
             <i>A task has been created and your team has been notified. We'll keep you posted.</i>
             """;
+
+        // Build rich Adaptive Card for Teams response
+        result.ResponseCard = ResponseCardBuilder.Build(bug, result, repo.DisplayName);
 
         return result;
     }

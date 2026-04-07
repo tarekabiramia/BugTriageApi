@@ -33,10 +33,20 @@ public class ClaudeService
             4 = Cross-cutting concern, race condition — architectural understanding needed
             5 = Intermittent, environment-specific — needs manual debugging
 
+            Category — classify the bug into exactly one:
+            - "UI Bug" — visual/layout/styling issues
+            - "API Error" — endpoint failures, HTTP errors, request/response issues
+            - "Data Issue" — wrong data, missing data, database/query problems
+            - "Logic Error" — incorrect business logic, wrong calculations, bad state
+            - "Performance" — slow response, timeout, memory issues
+            - "Security" — auth bypass, data exposure, injection vulnerabilities
+            - "Configuration" — wrong settings, environment issues, deployment config
+
             Rules:
             - Be specific about which files are affected and why
             - Rate complexity honestly based on the scale above
             - Only suggest a fix for complexity 1-2
+            - Always assign exactly one category from the list above
             - Respond with JSON only — no markdown, no explanation
             """;
 
@@ -63,6 +73,7 @@ public class ClaudeService
               ],
               "suggestedFix": "<fix description or null if complexity > 2>",
               "action": "<auto-fix|review-needed|manual>",
+              "category": "<one of: UI Bug, API Error, Data Issue, Logic Error, Performance, Security, Configuration>",
               "summary": "<one-line summary>"
             }
             """;

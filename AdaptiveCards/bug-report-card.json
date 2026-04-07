@@ -1,7 +1,7 @@
 {
   "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
   "type": "AdaptiveCard",
-  "version": "1.3",
+  "version": "1.4",
   "body": [
     {
       "type": "TextBlock",
@@ -22,13 +22,13 @@
       "label": "System / Repository",
       "isRequired": true,
       "errorMessage": "Please select a system",
-      "style": "compact",
       "choices": [
         { "title": "Workflows", "value": "workflows" },
         { "title": "Housing", "value": "housing" },
         { "title": "Colleague", "value": "colleague" },
         { "title": "Test repo", "value": "deka-construction" }
-      ]
+      ],
+      "placeholder": "Select system"
     },
     {
       "type": "Input.Text",
@@ -44,12 +44,12 @@
       "label": "Area",
       "isRequired": true,
       "errorMessage": "Area is required",
-      "style": "compact",
       "choices": [
         { "title": "Frontend", "value": "Frontend" },
         { "title": "Backend", "value": "Backend" },
         { "title": "Both", "value": "Both" }
-      ]
+      ],
+      "placeholder": "Select area"
     },
     {
       "type": "Input.Text",
@@ -63,7 +63,7 @@
       "type": "Input.Text",
       "id": "stepsToReproduce",
       "label": "Steps to Reproduce",
-      "placeholder": "1. Go to... 2. Click on... 3. See error",
+      "placeholder": "1. Go to...\n2. Click on...\n3. See error",
       "isRequired": true,
       "isMultiline": true,
       "errorMessage": "Steps to reproduce are required"
@@ -92,19 +92,19 @@
       "label": "Severity",
       "isRequired": true,
       "errorMessage": "Severity is required",
-      "style": "compact",
       "choices": [
         { "title": "Blocker", "value": "Blocker" },
         { "title": "High", "value": "High" },
         { "title": "Medium", "value": "Medium" },
         { "title": "Low", "value": "Low" }
-      ]
+      ],
+      "placeholder": "Select severity"
     },
     {
       "type": "Input.Text",
       "id": "screenshot",
       "label": "Screenshot URL (optional)",
-      "placeholder": "Upload to SharePoint/OneDrive and paste the link here"
+      "placeholder": "https://..."
     }
   ],
   "actions": [

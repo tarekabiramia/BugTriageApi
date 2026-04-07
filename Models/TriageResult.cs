@@ -38,6 +38,9 @@ public class TriageResult
     [JsonPropertyName("complexityLabel")]
     public string ComplexityLabel { get; set; } = string.Empty;
 
+    [JsonPropertyName("category")]
+    public string Category { get; set; } = string.Empty;
+
     [JsonPropertyName("repository")]
     public string Repository { get; set; } = string.Empty;
 
@@ -46,6 +49,9 @@ public class TriageResult
 
     [JsonPropertyName("prUrl")]
     public string? PrUrl { get; set; }
+
+    [JsonPropertyName("responseCard")]
+    public object? ResponseCard { get; set; }
 }
 
 public class AffectedFile
