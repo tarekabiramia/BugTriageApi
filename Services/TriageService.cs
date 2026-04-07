@@ -19,7 +19,13 @@ public class TriageService
 
     public async Task<TriageResult> TriageAsync(BugReportRequest bug)
     {
-        var fileTree = await _gitHubService.GetFileTreeAsync();
+        if (string.IsNullOrWhiteSpace(bug.Repository))
+            throw new ArgumentException("Repository is required");
+
+        var repo = _gitHubService.ResolveRepo(bug.Repository);
+        _logger.LogInformation("Triaging bug against repo: {Owner}/{Repo}", repo.Owner, repo.Repo);
+
+        var fileTree = await _gitHubService.GetFileTreeAsync(repo);
         var result = await _claudeService.TriageBugAsync(bug, fileTree);
 
         // Override action based on complexity thresholds
@@ -30,13 +36,16 @@ public class TriageService
             _ => "manual"
         };
 
+        // Track which repo was targeted
+        result.Repository = $"{repo.Owner}/{repo.Repo}";
+
         // Attempt auto-fix for low complexity bugs
         if (result.Action == "auto-fix")
         {
             try
             {
                 _logger.LogInformation("Triggering auto-fix for bug: {Title}", bug.Title);
-                var autoFixResult = await _autoFixService.CreateAutoFixAsync(bug, result);
+                var autoFixResult = await _autoFixService.CreateAutoFixAsync(bug, result, repo);
                 result.AutoFixResult = autoFixResult;
                 result.PrUrl = autoFixResult.PrUrl;
 
@@ -71,6 +80,7 @@ public class TriageService
             Page/Feature: {bug.PageOrFeature}
             Severity: {bug.Severity}
             Reporter: {bug.ReporterName}
+            Repository: {result.Repository}
 
             Steps to Reproduce:
             {bug.StepsToReproduce}
@@ -101,6 +111,7 @@ public class TriageService
             <br><br>
             <b>Title:</b> {bug.Title}<br>
             <b>Severity:</b> {bug.Severity}<br>
+            <b>System:</b> {repo.DisplayName}<br>
             <br>
             {statusMessage}
             <br><br>

@@ -1,13 +1,13 @@
 using System.Text;
 using System.Text.Json;
+using BugTriageApi.Models;
 
 namespace BugTriageApi.Services;
 
 public class GitHubService
 {
     private readonly HttpClient _httpClient;
-    private readonly string _owner;
-    private readonly string _repo;
+    private readonly Dictionary<string, RepoConfig> _repos;
 
     private static readonly HashSet<string> AllowedExtensions =
     [
@@ -24,9 +24,29 @@ public class GitHubService
     public GitHubService(HttpClient httpClient, IConfiguration config)
     {
         _httpClient = httpClient;
-        _owner = config["GitHub:Owner"] ?? Environment.GetEnvironmentVariable("GITHUB_OWNER") ?? "tarekabiramia";
-        _repo = config["GitHub:Repo"] ?? Environment.GetEnvironmentVariable("GITHUB_REPO") ?? "deka-construction";
+        _repos = config.GetSection("Repositories")
+            .GetChildren()
+            .ToDictionary(
+                section => section.Key,
+                section => new RepoConfig
+                {
+                    Owner = section["Owner"] ?? "",
+                    Repo = section["Repo"] ?? "",
+                    DefaultBranch = section["DefaultBranch"] ?? "main",
+                    DisplayName = section["DisplayName"] ?? section.Key
+                });
+
     }
+
+    public RepoConfig ResolveRepo(string repoKey)
+    {
+        if (_repos.TryGetValue(repoKey, out var config))
+            return config;
+
+        throw new ArgumentException($"Unknown repository: '{repoKey}'. Available: {string.Join(", ", _repos.Keys)}");
+    }
+
+    private string RepoBase(RepoConfig repo) => $"repos/{repo.Owner}/{repo.Repo}";
 
     private async Task<JsonElement> GetJsonAsync(string url, string operation)
     {
@@ -46,9 +66,9 @@ public class GitHubService
             $"GitHub {operation} failed ({response.StatusCode}): {body}. Context: {context}");
     }
 
-    public async Task<List<string>> GetFileTreeAsync(string branch = "main")
+    public async Task<List<string>> GetFileTreeAsync(RepoConfig repo)
     {
-        var url = $"repos/{_owner}/{_repo}/git/trees/{branch}?recursive=1";
+        var url = $"{RepoBase(repo)}/git/trees/{repo.DefaultBranch}?recursive=1";
         var root = await GetJsonAsync(url, "GetFileTree");
 
         var tree = root.GetProperty("tree");
@@ -72,9 +92,9 @@ public class GitHubService
         return files;
     }
 
-    public async Task<(string Content, string Sha)> GetFileMetadataAsync(string path, string branch = "main")
+    public async Task<(string Content, string Sha)> GetFileMetadataAsync(RepoConfig repo, string path)
     {
-        var url = $"repos/{_owner}/{_repo}/contents/{path}?ref={branch}";
+        var url = $"{RepoBase(repo)}/contents/{path}?ref={repo.DefaultBranch}";
         var root = await GetJsonAsync(url, $"GetFileMetadata({path})");
 
         var content = root.GetProperty("content").GetString() ?? "";
@@ -85,38 +105,39 @@ public class GitHubService
         return (decoded, sha);
     }
 
-    public async Task<string> GetFileContentAsync(string path, string branch = "main")
+    public async Task<(string Content, string Sha)> GetFileMetadataAsync(RepoConfig repo, string path, string branch)
     {
-        var (content, _) = await GetFileMetadataAsync(path, branch);
-        return content;
+        var url = $"{RepoBase(repo)}/contents/{path}?ref={branch}";
+        var root = await GetJsonAsync(url, $"GetFileMetadata({path})");
+
+        var content = root.GetProperty("content").GetString() ?? "";
+        var cleaned = content.Replace("\n", "");
+        var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(cleaned));
+        var sha = root.GetProperty("sha").GetString() ?? "";
+
+        return (decoded, sha);
     }
 
-    public async Task<string> GetFileShaAsync(string path, string branch = "main")
+    public async Task<string> GetBranchShaAsync(RepoConfig repo, string branch)
     {
-        var (_, sha) = await GetFileMetadataAsync(path, branch);
-        return sha;
-    }
-
-    public async Task<string> GetBranchShaAsync(string branch = "main")
-    {
-        var url = $"repos/{_owner}/{_repo}/git/ref/heads/{branch}";
+        var url = $"{RepoBase(repo)}/git/ref/heads/{branch}";
         var root = await GetJsonAsync(url, $"GetBranchSha({branch})");
         return root.GetProperty("object").GetProperty("sha").GetString() ?? "";
     }
 
-    public async Task CreateBranchAsync(string branchName, string fromBranch = "main")
+    public async Task CreateBranchAsync(RepoConfig repo, string branchName)
     {
-        var sha = await GetBranchShaAsync(fromBranch);
+        var sha = await GetBranchShaAsync(repo, repo.DefaultBranch);
 
         var payload = JsonSerializer.Serialize(new { @ref = $"refs/heads/{branchName}", sha });
         var content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-        var url = $"repos/{_owner}/{_repo}/git/refs";
+        var url = $"{RepoBase(repo)}/git/refs";
         var response = await _httpClient.PostAsync(url, content);
         await EnsureSuccessAsync(response, "CreateBranch", branchName);
     }
 
-    public async Task UpdateFileAsync(string path, string fileContent, string commitMessage, string branch, string fileSha)
+    public async Task UpdateFileAsync(RepoConfig repo, string path, string fileContent, string commitMessage, string branch, string fileSha)
     {
         var base64Content = Convert.ToBase64String(Encoding.UTF8.GetBytes(fileContent));
 
@@ -129,25 +150,25 @@ public class GitHubService
         });
         var content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-        var url = $"repos/{_owner}/{_repo}/contents/{path}";
+        var url = $"{RepoBase(repo)}/contents/{path}";
         var response = await _httpClient.PutAsync(url, content);
         await EnsureSuccessAsync(response, "UpdateFile", $"{path} on {branch}");
     }
 
-    public async Task<string> CreatePullRequestAsync(string title, string body, string head, string baseBranch = "main")
+    public async Task<string> CreatePullRequestAsync(RepoConfig repo, string title, string body, string head)
     {
         var payload = JsonSerializer.Serialize(new
         {
             title,
             body,
             head,
-            @base = baseBranch
+            @base = repo.DefaultBranch
         });
         var content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-        var url = $"repos/{_owner}/{_repo}/pulls";
+        var url = $"{RepoBase(repo)}/pulls";
         var response = await _httpClient.PostAsync(url, content);
-        await EnsureSuccessAsync(response, "CreatePullRequest", $"{head} → {baseBranch}");
+        await EnsureSuccessAsync(response, "CreatePullRequest", $"{head} → {repo.DefaultBranch}");
 
         var json = await response.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(json);

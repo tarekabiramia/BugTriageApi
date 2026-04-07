@@ -12,4 +12,5 @@ public class BugReportRequest
     public string ReporterName { get; set; } = string.Empty;
     public string? Screenshot { get; set; }
     public string? PlannerTaskId { get; set; }
+    public string? Repository { get; set; }
 }

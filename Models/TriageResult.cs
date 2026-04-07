@@ -38,6 +38,9 @@ public class TriageResult
     [JsonPropertyName("complexityLabel")]
     public string ComplexityLabel { get; set; } = string.Empty;
 
+    [JsonPropertyName("repository")]
+    public string Repository { get; set; } = string.Empty;
+
     [JsonPropertyName("autoFixResult")]
     public AutoFixResult? AutoFixResult { get; set; }
 

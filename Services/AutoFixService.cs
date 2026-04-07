@@ -18,7 +18,7 @@ public class AutoFixService
         _logger = logger;
     }
 
-    public async Task<AutoFixResult> CreateAutoFixAsync(BugReportRequest bug, TriageResult triage)
+    public async Task<AutoFixResult> CreateAutoFixAsync(BugReportRequest bug, TriageResult triage, RepoConfig repo)
     {
         var branchName = GenerateBranchName(bug.Title);
         var result = new AutoFixResult { BranchName = branchName };
@@ -27,7 +27,7 @@ public class AutoFixService
         {
             // Step 1: Fetch content + SHA for each affected file (parallel)
             var filePaths = triage.AffectedFiles.Select(f => f.Path).ToList();
-            var fileMetadataTasks = filePaths.Select(p => FetchFileMetadataSafe(p));
+            var fileMetadataTasks = filePaths.Select(p => FetchFileMetadataSafe(repo, p));
             var fileResults = await Task.WhenAll(fileMetadataTasks);
 
             var fileContents = new Dictionary<string, (string Content, string Sha)>();
@@ -91,18 +91,18 @@ public class AutoFixService
             }
 
             // Step 4: Create branch
-            _logger.LogInformation("Creating branch {Branch}", branchName);
-            await _gitHubService.CreateBranchAsync(branchName);
+            _logger.LogInformation("Creating branch {Branch} on {Owner}/{Repo}", branchName, repo.Owner, repo.Repo);
+            await _gitHubService.CreateBranchAsync(repo, branchName);
 
             // Step 5: Commit each approved fix
             foreach (var fix in approvedFixes)
             {
                 var sha = fileContents[fix.FilePath].Sha;
                 var commitMsg = $"fix: {fix.ChangeDescription}";
-                await _gitHubService.UpdateFileAsync(fix.FilePath, fix.FixedContent, commitMsg, branchName, sha);
+                await _gitHubService.UpdateFileAsync(repo, fix.FilePath, fix.FixedContent, commitMsg, branchName, sha);
 
                 // Update SHA for subsequent commits to the same file
-                var (_, newSha) = await _gitHubService.GetFileMetadataAsync(fix.FilePath, branchName);
+                var (_, newSha) = await _gitHubService.GetFileMetadataAsync(repo, fix.FilePath, branchName);
                 fileContents[fix.FilePath] = (fix.FixedContent, newSha);
 
                 result.FixesApplied.Add(new FixSummary
@@ -115,7 +115,7 @@ public class AutoFixService
             // Step 6: Open PR
             var prTitle = $"[Auto-Fix] {bug.Title}";
             var prBody = BuildPrDescription(bug, triage, approvedFixes);
-            var prUrl = await _gitHubService.CreatePullRequestAsync(prTitle, prBody, branchName);
+            var prUrl = await _gitHubService.CreatePullRequestAsync(repo, prTitle, prBody, branchName);
 
             result.PrUrl = prUrl;
             result.Success = true;
@@ -132,11 +132,11 @@ public class AutoFixService
         return result;
     }
 
-    private async Task<(string Content, string Sha)?> FetchFileMetadataSafe(string path)
+    private async Task<(string Content, string Sha)?> FetchFileMetadataSafe(RepoConfig repo, string path)
     {
         try
         {
-            return await _gitHubService.GetFileMetadataAsync(path);
+            return await _gitHubService.GetFileMetadataAsync(repo, path);
         }
         catch (Exception ex)
         {

@@ -17,6 +17,20 @@
       "spacing": "None"
     },
     {
+      "type": "Input.ChoiceSet",
+      "id": "repository",
+      "label": "System / Repository",
+      "isRequired": true,
+      "errorMessage": "Please select a system",
+      "style": "compact",
+      "choices": [
+        { "title": "Workflows", "value": "workflows" },
+        { "title": "Housing", "value": "housing" },
+        { "title": "Colleague", "value": "colleague" },
+        { "title": "Test repo", "value": "deka-construction" }
+      ]
+    },
+    {
       "type": "Input.Text",
       "id": "title",
       "label": "Title",
