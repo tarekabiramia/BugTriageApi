@@ -26,6 +26,7 @@ builder.Services.AddHttpClient<ClaudeService>((sp, client) =>
 });
 
 builder.Services.AddScoped<AutoFixService>();
+builder.Services.AddScoped<RepoContextService>();
 builder.Services.AddScoped<TriageService>();
 
 var app = builder.Build();
@@ -58,6 +59,25 @@ app.MapPost("/api/triage", async (BugReportRequest bug, TriageService triageServ
         logger.LogError(ex, "Triage failed for bug: {Title}", bug.Title);
         return Results.Json(new { error = "Triage failed", detail = ex.Message }, statusCode: 500);
     }
+});
+
+// Context update endpoint — called by GitHub Actions on merge to sync repo context
+app.MapPut("/api/context/{repoKey}", async (string repoKey, HttpRequest request, RepoContextService contextService, IConfiguration config) =>
+{
+    // Simple token auth — use the same GitHub token for now
+    var authHeader = request.Headers.Authorization.ToString();
+    var expectedToken = config["GitHub:Token"] ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN") ?? "";
+    if (string.IsNullOrEmpty(expectedToken) || authHeader != $"Bearer {expectedToken}")
+        return Results.Unauthorized();
+
+    using var reader = new StreamReader(request.Body);
+    var content = await reader.ReadToEndAsync();
+
+    if (string.IsNullOrWhiteSpace(content))
+        return Results.BadRequest(new { error = "Request body (context markdown) is required" });
+
+    await contextService.UpdateContextAsync(repoKey, content);
+    return Results.Ok(new { status = "updated", repoKey });
 });
 
 // Bind to Railway's PORT env var

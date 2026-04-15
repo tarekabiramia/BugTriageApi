@@ -7,13 +7,15 @@ public class TriageService
     private readonly GitHubService _gitHubService;
     private readonly ClaudeService _claudeService;
     private readonly AutoFixService _autoFixService;
+    private readonly RepoContextService _repoContextService;
     private readonly ILogger<TriageService> _logger;
 
-    public TriageService(GitHubService gitHubService, ClaudeService claudeService, AutoFixService autoFixService, ILogger<TriageService> logger)
+    public TriageService(GitHubService gitHubService, ClaudeService claudeService, AutoFixService autoFixService, RepoContextService repoContextService, ILogger<TriageService> logger)
     {
         _gitHubService = gitHubService;
         _claudeService = claudeService;
         _autoFixService = autoFixService;
+        _repoContextService = repoContextService;
         _logger = logger;
     }
 
@@ -26,7 +28,8 @@ public class TriageService
         _logger.LogInformation("Triaging bug against repo: {Owner}/{Repo}", repo.Owner, repo.Repo);
 
         var fileTree = await _gitHubService.GetFileTreeAsync(repo);
-        var result = await _claudeService.TriageBugAsync(bug, fileTree);
+        var repoContext = await _repoContextService.GetContextAsync(bug.Repository);
+        var result = await _claudeService.TriageBugAsync(bug, fileTree, repoContext);
 
         // Override action based on complexity thresholds
         result.Action = result.ComplexityScore switch
@@ -45,7 +48,7 @@ public class TriageService
             try
             {
                 _logger.LogInformation("Triggering auto-fix for bug: {Title}", bug.Title);
-                var autoFixResult = await _autoFixService.CreateAutoFixAsync(bug, result, repo);
+                var autoFixResult = await _autoFixService.CreateAutoFixAsync(bug, result, repo, repoContext);
                 result.AutoFixResult = autoFixResult;
                 result.PrUrl = autoFixResult.PrUrl;
 

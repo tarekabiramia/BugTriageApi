@@ -18,7 +18,7 @@ public class AutoFixService
         _logger = logger;
     }
 
-    public async Task<AutoFixResult> CreateAutoFixAsync(BugReportRequest bug, TriageResult triage, RepoConfig repo)
+    public async Task<AutoFixResult> CreateAutoFixAsync(BugReportRequest bug, TriageResult triage, RepoConfig repo, string? repoContext = null)
     {
         var branchName = GenerateBranchName(bug.Title);
         var result = new AutoFixResult { BranchName = branchName };
@@ -45,7 +45,7 @@ public class AutoFixService
 
             // Step 2: Generate fixes via Claude
             _logger.LogInformation("Generating fixes for {Count} files", fileContents.Count);
-            var fixes = await _claudeService.GenerateFixAsync(bug, triage, fileContents);
+            var fixes = await _claudeService.GenerateFixAsync(bug, triage, fileContents, repoContext);
 
             // Step 3: Review each fix via Claude
             var approvedFixes = new List<FixResult>();

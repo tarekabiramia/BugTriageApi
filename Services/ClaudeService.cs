@@ -14,13 +14,24 @@ public class ClaudeService
         _httpClient = httpClient;
     }
 
-    public async Task<TriageResult> TriageBugAsync(BugReportRequest bug, List<string> fileTree)
+    public async Task<TriageResult> TriageBugAsync(BugReportRequest bug, List<string> fileTree, string? repoContext = null)
     {
         var fileTreeText = string.Join("\n", fileTree.Select(f => $"  {f}"));
 
+        var contextSection = string.IsNullOrWhiteSpace(repoContext)
+            ? ""
+            : $"""
+
+            Here is the project architecture documentation — use this to understand file locations, patterns, and conventions:
+            <project_context>
+            {repoContext}
+            </project_context>
+
+            """;
+
         var systemPrompt = $$"""
             You are a senior full-stack developer triaging bugs for a .NET Core 8 + Vue 3.
-
+            {{contextSection}}
             Here is the repository file tree:
             <file_tree>
             {{fileTreeText}}
@@ -86,14 +97,26 @@ public class ClaudeService
     public async Task<List<FixResult>> GenerateFixAsync(
         BugReportRequest bug,
         TriageResult triage,
-        Dictionary<string, (string Content, string Sha)> fileContents)
+        Dictionary<string, (string Content, string Sha)> fileContents,
+        string? repoContext = null)
     {
         var filesSection = string.Join("\n\n", fileContents.Select(f =>
             $"--- FILE: {f.Key} ---\n{f.Value.Content}\n--- END FILE ---"));
 
+        var contextSection = string.IsNullOrWhiteSpace(repoContext)
+            ? ""
+            : $"""
+
+            Here is the project architecture documentation — follow these patterns and conventions when generating fixes:
+            <project_context>
+            {repoContext}
+            </project_context>
+
+            """;
+
         var systemPrompt = $$"""
             You are a senior developer fixing a bug in a .NET Core 8 + Vue 3.
-
+            {{contextSection}}
             Bug Report:
             Title: {{bug.Title}}
             Area: {{bug.Area}}
