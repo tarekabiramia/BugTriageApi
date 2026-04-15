@@ -25,7 +25,7 @@
       "choices": [
         { "title": "Workflows", "value": "workflows" },
         { "title": "Housing", "value": "housing" },
-        { "title": "Colleague", "value": "colleague" },
+        { "title": "Document Management", "value": "document-management" },
         { "title": "Test repo", "value": "deka-construction" }
       ],
       "placeholder": "Select system"
