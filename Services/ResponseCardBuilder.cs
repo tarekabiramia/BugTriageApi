@@ -143,7 +143,7 @@ public static class ResponseCardBuilder
                             new
                             {
                                 type = "TextBlock",
-                                text = "Powered by AI Triage",
+                                text = "Powered by R&D Team",
                                 size = "Small",
                                 isSubtle = true
                             }

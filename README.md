@@ -41,8 +41,6 @@ Teams Adaptive Card
 ```powershell
 $env:CLAUDE_API_KEY = "sk-ant-..."
 $env:GITHUB_TOKEN = "github_pat_..."
-$env:GITHUB_OWNER = "tarekabiramia"
-$env:GITHUB_REPO = "deka-construction"
 ```
 
 ### Run
@@ -73,7 +71,8 @@ curl -X POST http://localhost:8080/api/triage \
     "expected": "Should dial (714) 369-8714",
     "actual": "Dials +1234567890 placeholder",
     "severity": "Medium",
-    "reporterName": "Sarah"
+    "reporterName": "Sarah",
+    "repository": "deka-construction"
   }'
 ```
 
@@ -86,8 +85,6 @@ curl -X POST http://localhost:8080/api/triage \
 5. Set environment variables in Railway dashboard:
    - `CLAUDE_API_KEY`
    - `GITHUB_TOKEN`
-   - `GITHUB_OWNER`
-   - `GITHUB_REPO`
 6. Deploy and generate a public domain under Settings > Networking
 
 ## Power Automate Flow Setup
@@ -131,6 +128,7 @@ Analyzes a bug report and returns structured triage results.
 | actual | string | Yes | Actual behavior |
 | severity | string | Yes | Blocker, High, Medium, Low |
 | reporterName | string | Yes | Who reported it |
+| repository | string | Yes | Repo key (e.g. workflows, housing, colleague) |
 | screenshot | string | No | Screenshot URL |
 | plannerTaskId | string | No | Planner task ID |
 
